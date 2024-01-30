@@ -1,0 +1,217 @@
+---
+title: "HW 1"
+author: "Rifa Momin"
+date: "2024-01-25"
+output: pdf_document
+---
+
+```{r global_options, echo=FALSE}
+knitr::opts_chunk$set(fig.height=5, fig.width=7, fig.keep="all", warning=FALSE, tidy=TRUE, tidy.opts=list(width.cutoff=60))
+```
+
+```{r, echo=FALSE, message=FALSE}
+
+
+profs <- read.csv("profs.csv")
+bikeshare <- read.csv("bikeshare.csv")
+capmetro <- read.csv("capmetro_UT.csv")
+billboard <- read.csv("billboard.csv")
+
+library(ggplot2)
+library(tidyverse)
+library(knitr)
+library(kableExtra)
+```
+
+# Problem 1: Beauty, or not, in the classroom
+
+## Part A: Eval Scores
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+#Define ggplot object 
+profs_ggplot <- ggplot(profs)
+
+
+profs_ggplot + geom_histogram(aes(x=profs$eval), col="black", fill="aliceblue") + labs(title = "Disitrbution of Professor Evaluations", x="Evaluation Scores", y="Frequency")
+```
+The histogram above illustrates that the overall distribution of evaluation scores is skewed left. This suggests that students tend to evaluate their professors positively, as relatively few scores are below 3 and no scores are below 2.
+
+## Part B: Non-Native and Native English Speaking Professors
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+
+profs_ggplot + geom_boxplot(aes(x=native, y=eval), fill="aliceblue") + labs(title="Distribution of Scores for Non-Native and Native English Speaking Professors", x="Native Speaker", y="Evaluation Scores")
+
+```
+The no represents non-native English speaking professors and yes represents native English speaking professors. The plots suggest that students, usually, score native English speaking professors higher, though, interestingly, the native professors also have the lowest evaluation scores in the dataset. Likely, communication between students and native English speaking professors is more effective, hence students value that in their evaluations.
+
+## Part C: Female and Male Professors
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+
+profs_ggplot + geom_histogram(aes(x=eval), fill="aliceblue", col="black", bins=20) + facet_wrap(~gender) + labs(title="Distribution of Scores for Male and Female Professors", x="Evaluation Scores", y="Frequency")
+
+```
+Firstly, there is clearly more male professors than female professors. The distribution of scores for female professors appears more uniform, whereas the distribution of male professors appears skewed left, which translates to students evaluating male professors higher than female professor, though perhaps the inequal number of male and female professors may make a difference.
+
+## Part D: Physical Attractiveness
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+
+profs_ggplot + geom_point(aes(x = beauty, y = eval)) + labs(title = "Relationship Between Professor's Attractiveness and Course Evaluation Score", x = "Attractiveness Score", y= "Evaluation Score")
+
+cor(profs$beauty, profs$eval)
+```
+While there does not appear to be a distinct relationship between evaluation scores and attractiveness scores, it should be noted that professors that have an attractiveness score above 1 do not have evaluation scores below 3, though this still does not indicate a relationship; the correlation between attractiveness and evaluation score is r = `r round(cor(profs$beauty, profs$eval),2)` which indicates a very weak, postivie relationship between the two.
+
+
+# Problem 2: Bike Sharing
+
+## Plot A: Average Rentals and Hours of the Day
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+bikeshare1 <- bikeshare %>%
+  group_by(hr)%>%
+  summarize(avg_rentals = mean(total))
+
+plot2a <- ggplot(bikeshare1)
+plot2a + geom_line(aes(x = hr, y = avg_rentals)) + labs(title = "Average Hourly Bike Rentals", x= "Hour of the Day", y="Number of Bike Rentals")
+
+
+```
+
+The  two peaks on the graph reflect typical rush hour times in the morning, when people are starting their day, and the evening, when people are returning home. Although midday does not completely stoop down like at the beginning and of the line, indicating that there is still moderate usage of the bikes throughout the day.
+
+## Plot B
+
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+
+bikeshare2 <- bikeshare %>%
+  group_by(hr, workingday)%>%
+  summarize(avg_rentals = mean(total))
+
+plot2b <- ggplot(bikeshare2)
+plot2b + geom_line(aes(x = hr, y=avg_rentals)) + facet_wrap(~workingday, ncol=1) + labs(title="Average Hourly Bike Rentals by Workday/Weekend", x=" Hour of the Day", y= "Number of Bike Rentals" )
+
+```
+
+The 0 indicates a weekend and a 1 indicates a weekday. The peaks on the weekday graph represent that the rush hours like in plot A as individuals commute to and from work or school. On the other hand, the weekend graph portrays a gradual start and end to the usage of bikes, with a peak during midday, likely representing leisure use. 
+
+## Plot C
+
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+
+bikeshare3 = bikeshare %>%
+  filter(hr == 9) %>%
+  group_by(weathersit, workingday) %>%
+  summarize(avg_rentals = mean(total))
+
+plot2c <- ggplot(bikeshare3)
+plot2c + geom_col(aes(x=weathersit, y=avg_rentals), col="black", fill="aliceblue") + facet_wrap(~workingday, ncol = 1) + labs(title ="Average Ridership during 9 AM by Weather and Working Day", x="Weather Situation Code", y="Number of Bike Rentals")
+
+
+
+```
+Like in graph B, the 0 and 1 and the top of the graphs represent the weekend and working day, respectively. The weather situation codes are as follows:
+1. Clear, few clouds, partly cloudy
+2. Mist + cloud, mist + broken clouds, Mist + few clouds, Mist
+3. Light snow, light rain + thunderstorm + scattered clouds + light rain + scattered clouds
+4.  Heavy rain + ice pallets + thunderstorm + mist, snow + fog.
+
+As seen by the graphs, more people tend to ride in weather situation 1 on the weekends, which makes sense since it is the safest with the best visibility. Since people do not have work or school on the weekends, it makes sense why during weather situation 1 and 2 there are less riders compared to weather situation 1 and 2 during the weekdays since people cannot miss work or school.
+
+# Problem 3: Capital Metro UT Ridership
+
+## Part 1:
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+
+capmetro = mutate(capmetro,
+day_of_week = factor(day_of_week,
+levels=c("Mon", "Tue", "Wed","Thu", "Fri", "Sat", "Sun")),
+month = factor(month,
+levels=c("Sep", "Oct","Nov")))
+
+avg_capmetro <- capmetro %>% 
+  group_by(day_of_week, hour_of_day, month) %>% 
+  summarize(avg_boarding = mean(boarding))
+
+plot3a <- ggplot(avg_capmetro)
+
+plot3a + 
+  geom_line(aes(x = hour_of_day, y = avg_boarding, color = month)) +
+  facet_wrap(~day_of_week) + labs(title ="Average Hourly CapMetro UT Boardings from September - November by Day", x="Hour of Day", y="Average Boardings")
+
+```
+The graphs clearly exhibit a difference between weekday ridership and weekend ridership, likely because there is no school on the weekend so not many people need the bus on those days. Peak ridership on the weekdays occurs nearly at the same time around 3PM; the overall shape of weekday graphs for the three lines are very similar. Mondays in September may perhaps have lower ridership because people skip/miss class after the weekend or students are still getting into the groove of a routine after returning/starting school in the fall. Ridership is likely low on Weds/Thurs/Fri in November because students leave on those days for Thanksgiving break and are also gone for an entire week that month, thus not using the bus as often.
+
+
+## Part 2:
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+plot3b <- ggplot(capmetro)
+
+plot3b + geom_point(aes(x=temperature, y=boarding, color=weekend)) + facet_wrap(~hour_of_day) + labs(title="CapMetro UT Boardings and Temperature by Hour of Day and Working Day", x="Temperature (F)", y="Number of Boardings")
+
+
+```
+The above graph compares average CapMetro UT ridership by hour and temperature, distinguishing whether it was a weekday or weekend. If weekend and hour of day are held constant, there does not seem to be a significant relationship between temperature and number of boardings, since most boardings occur between 40 degrees and 80 degrees on most days, anyway.
+
+\newpage
+ 
+ 
+
+ 
+#  Problem 4: Wrangling the Billboard Top 100
+
+## Part A
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+
+top_10_songs <- billboard %>%
+  group_by(song, performer) %>%
+  count(name = "total_weeks") %>%
+  arrange(desc(total_weeks)) %>%
+  head(n=10)
+
+colnames(top_10_songs) <- c("Song", "Performer", "Total Weeks")
+kable((top_10_songs), booktabs = TRUE)
+```
+The table above displays the top 10 most popular songs from 1958 to 2021  based on the total number of weeks (not necessarily consecutive weeks) the song spent on the Billboard Top 100.
+
+## Part B
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+
+unique_songs <- billboard %>%
+  group_by(year) %>%
+  filter(year != 1958 & year != 2021) %>%
+  summarize(UniqueSongs = length(unique(song)))
+
+plot4b <- ggplot(unique_songs)
+plot4b + geom_line(aes(x=year, y=UniqueSongs)) + labs(title = "Unique Songs on Billboard 100 from 1959-2020", x = "Year", y = "Number of Unique Songs")
+
+```
+
+The graph above represents the number of unique songs on the Billboard 100 per year. There is decline from around 1970 to 2000s, which represents lack of musical diversity. However after around 2015, there is sudden increase in musical diversity.
+
+## Part C
+
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+
+ten_week_hit <- billboard %>%
+  group_by(song, performer) %>%
+  count (name = "total_weeks") %>%
+  filter(total_weeks >= 10)%>%
+  group_by(performer)%>%
+  count (name = "songs_per_artist")%>%
+  filter(songs_per_artist >= 30)
+
+plot4c <- ggplot(ten_week_hit)
+plot4c + geom_col(aes(x=performer, y=songs_per_artist), col="black", fill="aliceblue") + coord_flip() + labs(title="Artists with at Least 30 Songs with Ten-Week Hits", x="Number of Songs", y= "Artist")
+
+```
+The graph above gives information about artists from 1958 to 2021 who have had more than 30 songs with 10 week hits (songs that were on the Billboard 100 for at least ten weeks).
