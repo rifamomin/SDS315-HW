@@ -115,6 +115,7 @@ plot2c + geom_col(aes(x=weathersit, y=avg_rentals), col="black", fill="aliceblue
 
 ```
 Like in graph B, the 0 and 1 and the top of the graphs represent the weekend and working day, respectively. The weather situation codes are as follows:
+
 1. Clear, few clouds, partly cloudy
 2. Mist + cloud, mist + broken clouds, Mist + few clouds, Mist
 3. Light snow, light rain + thunderstorm + scattered clouds + light rain + scattered clouds
