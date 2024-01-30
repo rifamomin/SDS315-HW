@@ -8,6 +8,7 @@ output: pdf_document
 ```{r global_options, echo=FALSE}
 knitr::opts_chunk$set(fig.height=5, fig.width=7, fig.keep="all", warning=FALSE, tidy=TRUE, tidy.opts=list(width.cutoff=60))
 ```
+# importing datasets and libraries
 
 ```{r, echo=FALSE, message=FALSE}
 
@@ -28,7 +29,7 @@ library(kableExtra)
 ## Part A: Eval Scores
 
 ```{r, echo=FALSE, warning=FALSE, message=FALSE}
-#Define ggplot object 
+# Define ggplot object 
 profs_ggplot <- ggplot(profs)
 
 
@@ -60,7 +61,6 @@ Firstly, there is clearly more male professors than female professors. The distr
 
 profs_ggplot + geom_point(aes(x = beauty, y = eval)) + labs(title = "Relationship Between Professor's Attractiveness and Course Evaluation Score", x = "Attractiveness Score", y= "Evaluation Score")
 
-cor(profs$beauty, profs$eval)
 ```
 While there does not appear to be a distinct relationship between evaluation scores and attractiveness scores, it should be noted that professors that have an attractiveness score above 1 do not have evaluation scores below 3, though this still does not indicate a relationship; the correlation between attractiveness and evaluation score is r = `r round(cor(profs$beauty, profs$eval),2)` which indicates a very weak, postivie relationship between the two.
 
@@ -201,6 +201,10 @@ The graph above represents the number of unique songs on the Billboard 100 per y
 
 
 ```{r, echo=FALSE, warning=FALSE, message=FALSE}
+# group by song and performer first to count how many times it occurs in the dataset
+# create new variable that counts occurrences (this indicates total weeks)
+# filter for songs with total weeks >=10, then group by performer to count how many songs per artist
+# filter once more for artists with >= 30 songs
 
 ten_week_hit <- billboard %>%
   group_by(song, performer) %>%
