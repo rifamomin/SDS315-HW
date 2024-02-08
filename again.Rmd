@@ -1,0 +1,162 @@
+---
+title: "HW 3"
+author: "Rifa Momin, EID: rrm3334"
+date: "2024-02-05"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+library(mosaic)
+library(tidyverse)
+library(ggplot2)
+
+creatinine <- read.csv("creatinine.csv")
+marketmodel <- read.csv("marketmodel.csv")
+covid <- read.csv("covid.csv")
+milk <- read.csv("milk.csv")
+
+```
+
+# Problem 1
+
+## Part A
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+
+model_creatinine = lm(creatclear ~ age, data=creatinine)
+
+coef(model_creatinine)
+
+```
+
+The fitted regression model for creatinine clearance rate is y = 148 - .6x. The y is the predicted outcome and the x is the age of the patient. Additionally, the output suggests that the baseline of the model is 148 and the weight on age is -.6. For a 55-year old patient, their predicted creatinine clearance rate is 115 mL/minute, determined by inputting the age into the above regression model.
+
+
+## Part B
+
+The average rate of change for creatinine clearance by age is represented by -.6, the weight on age from the fitted model. This not only represents the slope of the model, but also explains that every one year change relates to a -.6 mL/minute change on creatinine clearance rate.
+
+## Part C
+
+The predicted creatinine clearance rate for a 40 year old and 60 year old is 124 mL/minute and 112 mL/minute, respectively. The actual rate for the 40 year old and 60 year old was 135 and 112 mL/minute, respectively. The 40 year old has a healthier rate since their actual clearance rate is higher than the predicted value from the model. However, the 60 year old has the expected rate for their age, which does not mean they are unhealthy, they are simply getting older. Though relative to their age and expected outcomes, the 40 year old is healthier. This claim can be validated through the residual equation (residual = actual - predicted). 
+
+- 135-124 = 11
+- 112-112 = 0
+
+
+
+# Problem 2
+
+
+## Part A
+
+"Beta," in the context of stocks refers to the systematic risk of a firm in the market portfolio. Essentially, when the market portfolio undergoes a 1% change, then beta is the measurement used to determine the percentage change in the return rates. Firms with beta values greater than one represent a higher risk in a market, while firms with beta values with less than 1 have a lower systematic risk. Alternatively, negative beta values indicate that in a market that is performing poorly where most firms would be impacted negatively, firms with negative beta values would thrive in this market, which is why many choose to invest in these kinds of stocks. Additionally, a beta value of 0 suggests no systematic risk. Simply, the systematic risk of a firm in the market portfolio can be gauged by it's beta value, or in terms of linear regression models, its slope. Also, a higher beta value indicates not only higher risk, but also higher return rates, or in other words a greater "y" value. This is because if the market porfolio increases, then they experience a greater return than other firms.
+
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+
+model_AAPL = lm(AAPL ~ SPY, data = marketmodel)
+coef(model_AAPL)
+
+model_GOOG = lm(GOOG ~ SPY, data = marketmodel)
+coef(model_GOOG)
+
+model_MRK = lm(MRK ~ SPY, data = marketmodel)
+coef(model_MRK)
+
+model_JNJ = lm(JNJ ~ SPY, data = marketmodel)
+coef(model_JNJ)
+
+model_WMT = lm(WMT ~ SPY, data = marketmodel)
+coef(model_WMT)
+
+model_TGT = lm(TGT ~ SPY, data = marketmodel)
+coef(model_TGT)
+
+rsquared(model_AAPL)
+rsquared(model_GOOG)
+rsquared(model_MRK)
+rsquared(model_JNJ)
+rsquared(model_WMT)
+rsquared(model_TGT)
+
+```
+
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+marketmodel_table <- tibble(
+  Stock = c("AAPL", "GOOG","MRK","JNJ","WMT", "TGT"),
+  Alpha_intercept = c(.009, .0002, -.0002, -0.00002, .0007, .002),
+  Beta_slope = c(1.066, .997, .714, .677, .519, .708),
+  R_Squared = c(.013, .648, .484, .502, .285, .248)
+)
+
+print(marketmodel_table)
+
+
+```
+
+
+
+The table above provides information about stock returns and their average beta value within different S&P 500 returns. The Beta_slope column indicates the average systematic risk of the firm and the R-squared value refers to the strength of the relationship between the daily return of S&P 500 index and the actual return of the individual stocks. The closer the r-squared value is to 1 or -1 the stronger the relationship. A negative value suggests a negative linear relationship, while a positive value suggests a positive linear relationship. The alpha column denotes the intercept for the regression model.
+
+## Part C
+
+WMT (Wal-Mart) has the lowest systematic risk, since if the market portfolio were to decrease, they would not be as impacted since consumers would still need to purchase groceries and other items for their day to day living. And even if they portfolio were to increase, they would still perform well in that marker. Alternatively, APPL (Apple) poses the highest systematic risk because in a decreasing market portfolio, the average person is not going to spend money on expensive items they do not absolutely need. However, if the market portfolio increases, people would indulge in more luxurious gifts.
+
+
+# Problem 3
+
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+italy_cases <- covid %>% 
+  filter(country =="Italy")
+
+lm_italy =lm(log(deaths)~days_since_first_death, data=italy_cases)
+coef(lm_italy)
+
+spain_cases <- covid %>% 
+  filter(country =="Spain")
+
+lm_spain =lm(log(deaths)~days_since_first_death, data=spain_cases)
+coef(lm_spain)
+
+Italy_DT = 70/(.183218*100)
+Spain_DT = 70/(0.2762447  * 100)
+
+print(Italy_DT)
+print(Spain_DT)
+
+
+```
+
+The estimated growth rate for Italy was 0.183 deaths per day with a doubling time of 4 days. The estimated growth rate for Spain was 0.276 deaths per day with a doubling time of 3 days.
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+
+covid_graph <- ggplot(covid)
+
+covid_graph + geom_line(aes(x=days_since_first_death, y=deaths, color = country)) + labs(title = "Daily COVID-19 Deaths Over Time in Italy and Spain", x="Days Since First Death", y="Death Count")
+```
+
+
+
+# Problem 4
+
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+lm_milk = lm(log(sales) ~ log(price), data = milk)
+
+coef(lm_milk)
+
+
+```
+
+
+The results above suggest that the power law is y = (e^4.72) * (x^-1.62), or y=112.2(x^-1.62). This means that the estimated price elasticity of demand for milk is -1.62, or in other words if milk increase by 1% that people, on average, will tend to by 1.62% less of it. This number was extrapolated from the power law model Q = K(x^B). By taking the natural log of both sides and applying the log properties, the linear equation simplifies to log(y) = log(K) + Blog(x), and goes through further simplification once K and B are inputted, in this case K = 4.72 and B = -1.62.
+ 
