@@ -1,0 +1,231 @@
+---
+title: "HW4"
+author: "Rifa Momin"
+date: "2024-02-15"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, include=FALSE}
+
+library(tidyverse)
+library(mosaic)
+library(dplyr)
+gasprices <- read.csv("gasprices.csv")
+sclass <- read.csv("sclass.csv")
+pilots <- read.csv("nbc_pilotsurvey.csv")
+ebay <- read.csv("ebay.csv")
+```
+
+
+
+# Question 1
+
+## Theory A
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+
+boot_gasprices_comp = do(10000)*diffmean(Price ~ Competitors, data=mosaic::resample(gasprices))
+
+confint(boot_gasprices_comp, level = .95)
+```
+
+The confidence interval for the difference of means for prices of gas stations with and without competitions is not statistically significant at the 5% level since the interval contains 0. Thus, the theory that gas stations charge more if they lack direct competition in sight seems unsupported by the data.
+
+## Theory B
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+ggplot(gasprices) + geom_point(aes(x=Income, y = Price))
+
+cor(gasprices$Income, gasprices$Price)
+```
+The graph and correlation coefficient above suggests a weak, positive relationships bewteen the income of an area and the gas prices, thus suggesting the theory that the richer the area the higher the gas prices is unsupported.
+
+## Theory C
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+
+boot_gasprices_light = do(10000)*diffmean(Price ~ Stoplight, data=mosaic::resample(gasprices))
+
+confint(boot_gasprices_light, level = .95)
+
+```
+Just as Theory A, the confidence interval for the difference of means for prices of gas stations near a stoplight and not near one suggests that the difference of mean prices between the two groups is not statistically significant since the interval at the 5% level contains 0. Hence, Theory C is not supported.
+
+## Theory D
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+boot_gasprices_highway = do(10000)*diffmean(Price ~ Highway, data=mosaic::resample(gasprices))
+
+confint(boot_gasprices_highway, level = .95)
+
+```
+
+The confidence interval for the difference of means for prices of gas stations near and not near highway suggests that there is a significant difference between mean prices of the two groups as the confidence interval at the 5% level fails to include 0. Thus, Theory D is supported: gas stations with direct highway access charge more.
+
+## Theory E
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+
+shell_gasprices <- gasprices %>% 
+  mutate(isShell = Brand == "Shell")
+
+boot_gasprices_shell = do(10000)*diffmean(Price ~ isShell, data = mosaic::resample(shell_gasprices))
+
+confint(boot_gasprices_shell, level = .95)
+
+```
+
+Theory E is also not supported since the confidence interval of the difference of means for prices between Shell and other companies suggest there is no statistically significant difference as 0 is in the interval at the 5% level.
+
+# Question 2
+
+## Part A
+
+
+```{r, include=FALSE}
+
+boot_sclass = 
+  sclass %>% 
+  filter(year == 2011) %>% 
+  filter(trim == "63 AMG")
+
+boot_sclass = do(10000)*mean(~mileage, data =mosaic::resample(sclass))
+
+```
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+confint(boot_sclass, level = .95)
+```
+The interval for average mileage of 2011 S-Class 63 AMGs is 39,864.03 -- 40,923.67 miles with 95% confidence level.
+
+```{r, include=FALSE}
+boot_sclass2 = sclass %>% 
+  filter(year == 2014) %>% 
+  filter(trim == "550") %>% 
+  mutate(isBlack = color == "Black")
+
+boot_sclass_prop = do(10000)*prop(~isBlack, data=mosaic::resample(boot_sclass2))
+```
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+confint(boot_sclass_prop, level = .95)
+```
+
+The 95% confidence interval for the proportion of black 2014 cars with 550 trims is .417 -- .453.
+
+
+# Problem 3
+
+## Part A
+```{r, include=FALSE}
+filtered_pilots <- pilots %>% 
+  filter(Show == "Living with Ed" | Show == "My Name is Earl")
+
+boot_happy_pilots = do(10000)*diffmean(Q1_Happy ~ Show, data=mosaic::resample(filtered_pilots))
+
+```
+
+```{r, include=FALSE}
+mean(Q1_Happy ~ Show, data = filtered_pilots)
+diffmean(Q1_Happy ~ Show, data = filtered_pilots)
+confint(boot_happy_pilots, level = .95)
+
+```
+1. The question I am trying to answer is whether there is a statistical difference between how happy audiences feel when they watch "Living with Ed" and "My Name is Earl."
+
+2. To answer this question, I not only calculated the separate means of Q1_Happy for each show, I also calculated difference of means, and generated a confidence interval for difference of means. Using R, I simulated 10,000 bootstrap samples from the original, filtered data, comparing the means of the answers to Q1_Happy between the two shows, and then applied difference of means to determine if there is a significant difference.
+
+3. The mean happiness score for "Living with Ed" was  3.93 and the mean score for "My Name is Earl" is 3.78. The difference of means is -.149. The confidence interval created was -.394 -- .098. 
+
+4. The results above suggest that "Living with Ed" has a .149 higher happiness score than "My Name is Earl." However, the difference in happiness score between the two shows is not statistically significant at the 5% level because a 95% confidence interval for that difference contains 0, which means that there is no evidence to prove that one show consistently produces higher mean Q1_Happiness responses.
+
+
+## Part B
+
+```{r, include=FALSE}
+filtered_reality <- pilots %>% 
+  filter(Show == "The Biggest Loser" | Show == "The Apprentice: Los Angeles")
+
+boot_annoyed = do(10000)*diffmean(Q1_Annoyed ~ Show, data=mosaic::resample(filtered_reality))
+
+```
+
+```{r, include=FALSE}
+mean(Q1_Annoyed ~ Show, data = filtered_reality)
+diffmean(Q1_Annoyed ~ Show, data = filtered_reality)
+confint(boot_annoyed, level = .95)
+
+```
+1. The question I am trying to answer is if there is evidence to prove whether "The Biggest Loser" or "The Apprentice: Los Angeles" produces higher mean Q1_Annoyed responses.
+
+2. To answer this question, I calculated the following: means of Q1_Annoyed for each show, difference of means, and a confidence interval for the difference of means. The confidence interval was created by simulating 10,000 bootstrap samples from the original, filtered data.  
+
+3. The mean annoyed score for "The Apprentice: Los Angeles" was 2.31 and the "The Biggest Loser" mean annoyed score was 2.04. The difference of means was -.27, and the confidence interval for difference of means was -.520 -- -.025.
+
+4. The results above suggest that "The Apprentice: Los Angeles" has a .27 higher mean annoyed score than "The Biggest Loser." The difference in annoyed score between the two shows is statistically significant at the 5% level because a 95% confidence interval for that difference fails to contain 0, which means that there is evidence to suggest that one show consistently produces a higher mean Q1_Annoyed response.
+
+## Part C
+
+
+```{r, include=FALSE}
+
+boot_DWTS = pilots %>% 
+  filter(Show == "Dancing with the Stars") %>% 
+  mutate(isConfused = Q2_Confusing >= 4)
+
+boot_DWTS_prop = do(10000)*prop(~isConfused, data=mosaic::resample(boot_DWTS))
+
+
+
+```
+
+```{r, include=FALSE}
+prop(~isConfused, data=boot_DWTS)
+confint(boot_DWTS_prop, level = .95)
+
+
+```
+
+1. The question I am trying to answer is what proportion of American TV watchers would expect to give a response of 4 or greater to the Q2_Confusing question.
+
+2. To answer this question, I calculated the proportion of answers that scored "Dancing with the Stars" 4 or higher on Q2_Confusing and a confidence interval for that proportion by simulating 10,000  bootstrap samples from the original, filtered data.
+
+3. The results were as such: .077 of the original sample scored "Dancing with the Stars" with 4 or higher, and the confidence interval was .044 -- .116.
+
+4. The results above suggest that 7.7% of American TV watchers would score "Dancing with the Stars" 4 or higher for the Q2_Confusing question, and we are 95% confident that the true population proportion is somewhere between 4.4% and 11.6%.
+
+
+# Problem D
+
+```{r, include=FALSE}
+filtered_ebay <- ebay %>% 
+  mutate(rev_ratio = rev_after / rev_before)
+
+mean(rev_ratio ~ adwords_pause, data = filtered_ebay)
+
+diffmean(rev_ratio ~ adwords_pause, data = filtered_ebay)
+
+```
+
+```{r, include=FALSE}
+
+boot_rev_ebay = do(10000)*diffmean(rev_ratio ~ adwords_pause, data = mosaic::resample(filtered_ebay))
+
+```
+
+```{r, include=FALSE}
+confint(boot_rev_ebay, level = .95)
+
+```
+
+
+1. The question I am trying to answer if paid advertisements create extra revenue  than the "organic" search results on Google for Ebay.
+
+2. To answer this question, I calculated  the ratio revenue for each data point and the means of the ratio revenue for the control and treatment group. I also calculated the difference of means and a confidence interval for the difference of means.
+
+3. The mean ratio revenue for the control group, that is, where advertising on Google continued, and the treatment group, which was where advertising was paused, was 0.949 and 0.897, respectively. The difference of means was -.052, and the confidence interval was -0.092 -- -.013.
+
+4. The results above suggest that the following claim can be made with 95% confidence that on average the control group have a greater ratio revenue by .052 than the treatment group. The difference between the control and treatment group is statistically significant at the 5% level because a 95% confidence interval for that difference fails to contain zero. Since this ratio revenue is significantly difference, it is can be suggested that the advertisements generate significantly more revenue for Ebay. This is an important understanding for Ebay so that they can determine whether they want to invest more money into advertisements or direct that money to other projects that would boost their revenue. 
