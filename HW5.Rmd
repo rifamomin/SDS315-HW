@@ -1,0 +1,162 @@
+---
+title: "HW 5"
+author: "Rifa Momin"
+date: "2024-02-22"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+library(tidyverse)
+library(mosaic)
+library(ggplot2)
+library(knitr)
+library(kableExtra)
+letter_frequencies <- read.csv("letter_frequencies.csv")
+```
+
+# Problem 1
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+
+sim_ironbank= do(100000)*nflip(n=2021, prob=.024)
+p_value_bank = (sum(sim_ironbank >= 70)) /100000
+
+
+```
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+
+ggplot(sim_ironbank) + geom_histogram(aes(x = nflip), binwidth = 1, fill = "pink2", color = "black") +
+  labs(title = "Distribution of Simulation", x = "Number of Flips", y = "Frequency")
+
+```
+
+
+The null hypothesis is that securities trades from Iron Bank are flagged at the same 2.4% baseline rate as that of other traders.
+
+The test statistic is the number of flagged trades. In this data,there were 70 flagged trades out of 2021.
+
+The calculate probability distribution, 100, 000 Monte Carlo simulations were ran, with each simulation having 2021 flips and a .024 probability.
+
+After running the simulation, `r sum(sim_ironbank >= 70)` simulations yielded 70 cases of flagged trades or more. `r sum(sim_ironbank >= 70)` out 100,000 cases gives us a p-value of `r (sum(sim_ironbank >= 70)) / 100000`. Since `r (sum(sim_ironbank >= 70)) / 100000` < .05 suggests that the null hypothesis is rejected; Iron Bank has a greater baseline rate of flagged trades than 2.4%.
+
+# Problem 2
+
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+
+sim_health= do(100000)*nflip(n=50, prob=.03)
+sum(sim_health >= 8)
+```
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+
+ggplot(sim_health) + geom_histogram(aes(x = nflip), binwidth = 1, fill = "pink2", color = "black") +
+  labs(title = "Distribution of Simulation", x = "Number of Flips", y = "Frequency")
+```
+
+The null hypothesis is that health code violations from Gourmet Bites are cited at the same 3% baseline rate of other restaurants in the city, on average.
+
+The test statistic is the number of health code violations. In this data, there were 8 violations out of 50 inspections.
+
+The calculate probability distribution, 100,000 Monte Carlo simulations were ran, with each simulation having 50 flips and a .03 probability.
+
+After running the simulation, `r sum(sim_health >= 8)` simulations yielded 8 health code violations or more. `r sum(sim_health >= 8)` out 100,000 cases gives us a p-value of `r (sum(sim_health >= 8)) / 100000`. Since `r (sum(sim_health >= 8)) / 100000` < .05 suggests that the null hypothesis is rejected; Gourmet Bites  has a greater baseline rate of health code violations than the average restaurant in the city.
+
+
+
+
+# Problem 3
+
+## Part A
+
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+file_path <- "C:/Users/rifar/OneDrive/Desktop/UT 23-24/SDS 315/brown_sentences.txt"
+
+brown_sentences <- readLines(file_path)
+brown_sentences <- tibble(Sentence = brown_sentences)
+
+```
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+
+calculate_chi_squared = function(brown_sentences, freq_table) {
+  
+  # remove all non-letter characters
+  brown_sentences = gsub("[^A-Za-z]", "", brown_sentences) 
+  brown_sentences = toupper(brown_sentences)
+  
+  observed_counts <- table(factor(strsplit(brown_sentences, "")[[1]], levels = freq_table$Letter))
+  total_letters = sum(observed_counts)
+  
+  expected_counts = total_letters * freq_table$Probability
+  
+  chi_squared_stat = sum((observed_counts - expected_counts)^2 / expected_counts)
+  
+  return(chi_squared_stat)
+
+}
+
+chi_squared_stats <- list()
+
+# loop through all sentences to compute chi-squared, store stat in empty list above
+for (x in 1:nrow(brown_sentences)){
+  chi_squared_stats[x] = calculate_chi_squared(brown_sentences[x,], letter_frequencies)
+}
+
+reference_distribution = unlist(chi_squared_stats)
+
+
+ggplot(data = NULL) + geom_histogram(aes(x=unlist(reference_distribution)), binwidth = 3, color = "black", fill = "lightblue2") + labs(title = "Distribution of Chi Squared", x = "", y = "Frequency")
+```
+
+
+## Part B
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+
+# Define the sentences
+sentences <- c(
+  "She opened the book and started to read the first chapter, eagerly anticipating what might come next.",
+  "Despite the heavy rain, they decided to go for a long walk in the park, crossing the main avenue by the fountain in the center.",
+  "The museum’s new exhibit features ancient artifacts from various civilizations around the world.",
+  "He carefully examined the document, looking for any clues that might help solve the mystery.",
+  "The students gathered in the auditorium to listen to the guest speaker’s inspiring lecture.",
+  "Feeling vexed after an arduous and zany day at work, she hoped for a peaceful and quiet evening at home, cozying up after a quick dinner with some TV, or maybe a book on her upcoming visit to Auckland.",
+  "The chef demonstrated how to prepare a delicious meal using only locally sourced ingredients, focusing mainly on some excellent dinner recipes from Spain.",
+  "They watched the sunset from the hilltop, marveling at the beautiful array of colors in the sky.",
+  "The committee reviewed the proposal and provided many points of useful feedback to improve the project’s effectiveness.",
+  "Despite the challenges faced during the project, the team worked tirelessly to ensure its successful completion, resulting in a product that exceeded everyone’s expectations."
+)
+
+```
+
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+calculate_p_value <- function(observed_statistic, reference_distribution) {
+  p_value <- sum(reference_distribution >= observed_statistic) / length(reference_distribution)
+  return(p_value)
+}
+# store stats while looping through each sentence 
+chi_squared_stats <- numeric(length = 10)
+p_values <- numeric(length = 10)
+
+for (i in 1:10) {
+  chi_squared_stats[i] <- calculate_chi_squared(sentences[i], letter_frequencies)
+  p_values[i] <- calculate_p_value(chi_squared_stats[i], reference_distribution)
+}
+
+p_values <- round(p_values, 3)
+
+p_value_table <- data.frame(SentenceNum = 1:length(p_values), P_Value = p_values)
+kable((p_value_table), booktabs = TRUE)
+
+```
+
+
+The watermarked sentence is sentence 6: Feeling vexed after an arduous and zany day at work, she hoped for a peaceful and quiet evening at home, cozying up after a quick dinner with some TV, or maybe a book on her upcoming visit to Auckland. The table above shows that it is the only sentence with a p-value (.009) less than .05, suggesting statistical significance when comparing the chi squared distribution of the sentence to the reference chi squared distribution.
