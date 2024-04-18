@@ -30,8 +30,10 @@ solder <- read.csv("solder.csv")
 
 ```{r, echo=FALSE, warning=FALSE, message=FALSE}
 
+# sample proportion stat
 prop(voted1998 ~ GOTV_call, data=turnout)
 
+# population proportion
 boot_prop = do(10000)*prop(voted1998 ~ GOTV_call, data=mosaic::resample(turnout))
 
 kable(confint(boot_prop, level = .95), digits = 2)
@@ -77,6 +79,8 @@ The graphs above suggest that voted1996, AGE, and MAJORPTY are confounding varia
 matched_turnout <- matchit(GOTV_call ~ + voted1996 + AGE + MAJORPTY, data = turnout, ratio = 5) %>% 
   match.data()
 
+# format table neatly
+
 kable(mean(AGE ~ GOTV_call, data = matched_turnout))
 
 matched_table <- matched_turnout %>% 
@@ -93,6 +97,7 @@ matched_table
 
 
 ```{r, echo=FALSE, warning=FALSE, message=FALSE}
+# same code and analysis of population proportions as part A
 
 kable(prop(voted1998 ~ GOTV_call, data=matched_turnout), digits = 2)
 
@@ -149,6 +154,7 @@ The plot above indicates something similar as the previous graph, in that thinne
 
 solder_model <- lm(skips ~ Opening + Solder + Opening:Solder, data = solder)
 
+# display coefficients in a table
 
 coefficients <- coef(solder_model) %>% round(2)
 
