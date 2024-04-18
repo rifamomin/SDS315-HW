@@ -1,0 +1,172 @@
+---
+title: "HW9"
+author: "Rifa Momin, EID: rrm3334"
+date: "2024-04-15"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, include=FALSE}
+library(mosaic)
+library(tidyverse)
+library(ggplot2)
+library(knitr)
+library(kableExtra)
+library(MatchIt)
+library(moderndive)
+turnout <- read.csv("turnout.csv")
+solder <- read.csv("solder.csv")
+
+```
+
+
+# Problem 1: Get out the vote
+
+## Part A
+
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+
+prop(voted1998 ~ GOTV_call, data=turnout)
+
+boot_prop = do(10000)*prop(voted1998 ~ GOTV_call, data=mosaic::resample(turnout))
+
+kable(confint(boot_prop, level = .95), digits = 2)
+
+```
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+boot_vote = do(10000)*diffprop(voted1998 ~ GOTV_call, data = mosaic::resample(turnout))
+
+kable(confint(boot_vote, level = .95), digits =2 )
+
+```
+
+
+The proportion of those receiving a GOTV call who voted in 1998 was from the population is between .59 - .71, the 95% confidence interval. The proportion of those no receiving a GOTV call who voted in 1998 from the sample population is .44. The 95% confidence interval which explains the difference in these two proportions is .14 - .26.
+
+
+## Part B
+
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+
+ggplot(turnout, aes(x = voted1996, fill = factor(GOTV_call))) + geom_bar(position = "dodge", alpha = .7)
+
+```
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+ggplot(turnout, aes(x = AGE, fill = factor(GOTV_call))) + geom_boxplot()
+
+```
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+
+ggplot(turnout, aes(x = MAJORPTY, fill = factor(GOTV_call))) + geom_bar(position = "dodge", alpha = .7)
+
+```
+The graphs above suggest that voted1996, AGE, and MAJORPTY are confounding variables because there is a relationship between GOTV_call and those variables. In other words, GOTV_call and voted1998 alone itself cannot tell us the true difference in proportions because there are additional variables that contribute to that difference.
+
+## Part C
+
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+matched_turnout <- matchit(GOTV_call ~ + voted1996 + AGE + MAJORPTY, data = turnout, ratio = 5) %>% 
+  match.data()
+
+kable(mean(AGE ~ GOTV_call, data = matched_turnout))
+
+matched_table <- matched_turnout %>% 
+  mutate(GOTV_call_label = ifelse(GOTV_call == 1, "Received", "Did Not Receive")) %>% 
+  group_by(GOTV_call_label) %>% 
+  summarize(mean_age = mean(AGE), mean_majorpty = mean(MAJORPTY), mean_voted = mean(voted1996)) %>% 
+  kbl(col.names = c("GOTV Call", "Mean Age", "Mean Party Registration", "Voted in 1996"), booktabs = TRUE, digits = 2) %>% 
+  kable_styling(latex_options = "hold_position")
+
+matched_table
+```
+### Repeating Analysis
+
+
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+
+kable(prop(voted1998 ~ GOTV_call, data=matched_turnout), digits = 2)
+
+boot_prop_matched = do(10000)*prop(voted1998 ~ GOTV_call, data=mosaic::resample(matched_turnout))
+```
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+kable(confint(boot_prop_matched, level = .95), digits = 2)
+
+```
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+boot_vote_matched = do(10000)*diffprop(voted1998 ~ GOTV_call, data = mosaic::resample(matched_turnout))
+
+kable(confint(boot_vote_matched, level = .95), digits = 3)
+
+```
+
+The population proportion of those who received a GOTV call and voted can be explained by the 95% confidence interval .59 - .71. The sample proportion of those who voted but did not receive a call is .57. The difference in proportions can be explained by the 95% confidence interval .007 - .138.
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+t.test(voted1998 ~ GOTV_call, data = matched_turnout)
+
+
+```
+The results of the t-test above suggest that not only is difference in proportion statistically significant, given the p-value is less than .05, but also that people are more likely to vote if they receive a GOTV call because the proportion of people who received a call and voted is larger than those who did not receive a call and voted. The difference of means in t-test result also depicts a similar conclusion. 
+
+# Problem 2
+
+
+ 
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+ggplotOpening <- ggplot(solder, aes(x = Opening, y = skips, fill = Opening)) + geom_boxplot() + coord_flip() + labs(x = "Size of Opening on Solder Gun", y = "Number of Skips", title = "Size of Opening vs Number of Skips")
+
+
+print(ggplotOpening)
+
+```
+The plot above indicates the distribution of number of skips occurring in manufacturing based on the size of opening on the solder gun. Noticeably, small openings have a greater median number of skips, compared to medium and large openings.
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+
+ggplotSolder <- ggplot(solder, aes(x = Solder, y = skips, fill = Solder)) + geom_boxplot() + coord_flip() + labs(x = "Alloy Thickness", y = "Number of Skips", title = "Alloy Thickness vs Number of Skips")
+
+
+print(ggplotSolder)
+
+
+```
+The plot above indicates something similar as the previous graph, in that thinner alloys used for soldering tend to have more skips in manufacturing, compared to thick alloys used for soldering.
+
+## Part B
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+
+solder_model <- lm(skips ~ Opening + Solder + Opening:Solder, data = solder)
+
+
+coefficients <- coef(solder_model) %>% round(2)
+
+coefficients_df <- as.data.frame(coefficients)
+
+kable(coefficients_df)
+
+```
+
+
+## Part C
+
+The above table suggests that coefficient on Opening:M is 2.41, meaning that if an opening differs by large or medium, then the number of skips increases by 2.41, which is similar for the coefficent on Opening:S: if an opening is small, compared to large, number of skips increases b 5.13. As for the thickness, thin alloy will have increased skips of 2.28 compared to thicker alloy.
+
+
+The coefficient on OpeningM:SolderThin is an offset to the slope: compared to the baseline slope of 2.41, this term makes the line shallower by -.74, whereas the coefficient on OpeningS:SolderThin, this term makes the baseline slope of 5.13 steeper by 9.65. 
+
+## Part D
+
+
+To minimize the number of skips in the manufacturing process, I would recommend a combination of a large opening size and thicker alloy for soldering. The coefficients above suggest a similar conclusion, as the interaction between a small opening and thin alloy results in the greatest increase in number of skips. Notice how as the size of the opening increases, the number of skips decreases. 
